@@ -22,7 +22,15 @@ minio_client = MinioClient(
 
 app = FastAPI()
 
-origins = ["*"]
+# Updated origins list to include Angular dev server
+origins = [
+    "http://localhost:4200",  # Angular dev server
+    "http://localhost:8000",  # FastAPI server
+    "http://localhost",       # For other local development
+    "http://127.0.0.1:4200",  # Alternative Angular URL
+    "http://127.0.0.1:8000",  # Alternative FastAPI URL
+    "*"                       # Keep wildcard during development
+]
 
 app.add_middleware(
     CORSMiddleware,
@@ -30,6 +38,8 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],     # Expose headers to the client
+    max_age=600               # Cache preflight requests for 10 minutes
 )
 
 # 1. tables
