@@ -1,0 +1,29 @@
+version: "3.8"
+
+services:
+  web:
+    build: .
+    container_name: postino_web
+    env_file: .env                # your app needs the same vars
+    ports:
+      - "8000:8000"
+    depends_on:
+      - minio
+    volumes:
+      - .:/app                   # hot‑reload / keep code local
+      - sqlite_data:/app/src     # SQLite file persists outside
+
+  minio:
+    image: minio/minio:latest
+    container_name: postino_minio
+    env_file: .env               # ← share .env with MinIO
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"              # S3 / API
+      - "9001:9001"              # web console (nice GUI)
+    volumes:
+      - minio_data:/data
+
+volumes:
+  sqlite_data:
+  minio_data:
