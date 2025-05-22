@@ -83,7 +83,7 @@ def create_post(
     post = Post(
         title=obj_in.title,
         content=obj_in.content,
-        image_url=image_url,  # Store the filename directly
+        image_url=image_url,  # This might be None
         is_active=obj_in.is_active if obj_in.is_active is not None else True,
         is_archived=obj_in.is_archived if obj_in.is_archived is not None else False,
     )

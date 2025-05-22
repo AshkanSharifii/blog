@@ -1,7 +1,7 @@
 # src/app/schemas/post_schema.py
 from datetime import datetime
-from typing import List, Optional, Dict, Any, Set, Union
-from pydantic import BaseModel, Field, validator, model_validator
+from typing import List, Optional, Dict, Any
+from pydantic import BaseModel, Field, field_validator, model_validator
 import re
 
 
@@ -11,8 +11,8 @@ class PostBase(BaseModel):
     """
     Base schema for post data that's common across create and update operations.
     """
-    title: str = Field(..., description="Post title")
-    content: str = Field(..., description="Post content in markdown format")
+    title: str = Field(default="", description="Post title")
+    content: str = Field(default="", description="Post content in markdown format")
     # UI sends comma‑separated names, e.g. "هواوی,انویدیا"
     tags: Optional[str] = Field(
         default=None,
@@ -27,19 +27,20 @@ class PostBase(BaseModel):
         description="Whether the post is archived"
     )
 
-    @validator('title')
+    @field_validator('title')
+    @classmethod
     def title_not_empty(cls, v):
-        if not v or not v.strip():
-            raise ValueError('Title cannot be empty')
-        return v.strip()
+        # Allow empty title, but strip whitespace
+        return v.strip() if v else v
 
-    @validator('content')
+    @field_validator('content')
+    @classmethod
     def content_not_empty(cls, v):
-        if not v or not v.strip():
-            raise ValueError('Content cannot be empty')
-        return v
+        # Allow empty content, but strip whitespace
+        return v.strip() if v else v
 
-    @validator('tags')
+    @field_validator('tags')
+    @classmethod
     def validate_tags(cls, v):
         if v is None:
             return v
@@ -51,7 +52,7 @@ class PostBase(BaseModel):
         tags = [tag for tag in tags if tag]
 
         # Rejoin with commas
-        return ','.join(tags)
+        return ','.join(tags) if tags else None
 
 
 class PostCreate(PostBase):
@@ -70,7 +71,7 @@ class PostCreate(PostBase):
     )
 
     @model_validator(mode='after')
-    def validate_post_creation(self) -> 'PostCreate':
+    def validate_post_creation(self):
         # Add any cross-field validation logic here
         return self
 
@@ -96,7 +97,7 @@ class PostUpdate(PostBase):
     )
 
     @model_validator(mode='after')
-    def validate_post_update(self) -> 'PostUpdate':
+    def validate_post_update(self):
         # Add any cross-field validation logic here
         return self
 
@@ -106,8 +107,8 @@ class PostOut(BaseModel):
     Schema for returning a post in API responses.
     """
     id: int = Field(..., description="Post ID")
-    title: str = Field(..., description="Post title")
-    content: str = Field(..., description="Post content in markdown format")
+    title: str = Field(default="", description="Post title")
+    content: str = Field(default="", description="Post content in markdown format")
     image_url: Optional[str] = Field(
         default=None,
         description="URL or filename of the cover image"
@@ -183,11 +184,12 @@ class PostOut(BaseModel):
             return text[:max_length].rstrip() + '...'
         return text.strip()
 
-    class Config:
-        from_attributes = True
-        json_encoders = {
+    model_config = {
+        "from_attributes": True,
+        "json_encoders": {
             datetime: lambda dt: dt.isoformat()
         }
+    }
 
 
 class PostListItem(BaseModel):
@@ -208,8 +210,9 @@ class PostListItem(BaseModel):
         description="Auto-generated summary of the post content"
     )
 
-    class Config:
-        from_attributes = True
+    model_config = {
+        "from_attributes": True
+    }
 
     @classmethod
     def from_post(cls, post: PostOut) -> 'PostListItem':
@@ -244,11 +247,12 @@ class PostPagination(BaseModel):
     end_item: int = Field(..., description="Number of the last item on the current page")
     has_more: bool = Field(..., description="Whether there are more pages after this one")
 
-    class Config:
-        from_attributes = True
-        json_encoders = {
+    model_config = {
+        "from_attributes": True,
+        "json_encoders": {
             datetime: lambda dt: dt.isoformat()
         }
+    }
 
 
 # ------------------- Post Filter Schemas -------------------
